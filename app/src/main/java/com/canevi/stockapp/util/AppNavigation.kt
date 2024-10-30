@@ -81,7 +81,7 @@ fun App() {
                     )
                 ) + slideIntoContainer(
                     animationSpec = tween(300, easing = EaseIn),
-                    towards = AnimatedContentTransitionScope.SlideDirection.Start
+                    towards = AnimatedContentTransitionScope.SlideDirection.Up
                 )
             },
             exitTransition = {
@@ -91,7 +91,7 @@ fun App() {
                     )
                 ) + slideOutOfContainer(
                     animationSpec = tween(300, easing = EaseOut),
-                    towards = AnimatedContentTransitionScope.SlideDirection.End
+                    towards = AnimatedContentTransitionScope.SlideDirection.Down
                 )
             }
         ) {
