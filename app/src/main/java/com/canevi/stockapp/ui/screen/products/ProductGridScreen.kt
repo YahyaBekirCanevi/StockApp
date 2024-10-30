@@ -109,7 +109,9 @@ fun ProductGridScreen(
         snackbarHost = { SnackbarHost(snackBarHostState) },
         bottomBar = {
             BottomAppBar(
-                showNewProductScreen = { onNavigateToNewProduct() }
+                showNewProductScreen = { onNavigateToNewProduct() },
+                onHomeScreen = {},
+                onProfileScreen = {}
             )
         },
         topBar = {
