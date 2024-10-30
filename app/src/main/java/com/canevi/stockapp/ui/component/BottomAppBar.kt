@@ -28,6 +28,8 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun BottomAppBar(
     showNewProductScreen: () -> Unit,
+    onHomeScreen: () -> Unit,
+    onProfileScreen: () -> Unit,
 ) {
     Row(
         modifier = Modifier
@@ -36,7 +38,7 @@ fun BottomAppBar(
         verticalAlignment = Alignment.CenterVertically
     ) {
         IconButton(
-            onClick = { /* Navigate to Home */ },
+            onClick = { onHomeScreen() },
             colors = IconButtonDefaults.iconButtonColors(contentColor = Color.Gray),
             modifier = Modifier.weight(1f)
         ) {
@@ -86,7 +88,7 @@ fun BottomAppBar(
         }
 
         IconButton(
-            onClick = { /* Navigate to Profile */ },
+            onClick = { onProfileScreen() },
             colors = IconButtonDefaults.iconButtonColors(contentColor = Color.Gray),
             modifier = Modifier.weight(1f)
         ) {
