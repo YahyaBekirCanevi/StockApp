@@ -5,8 +5,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
@@ -34,7 +36,7 @@ fun BottomAppBar(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 4.dp, bottom = 16.dp),
+            .padding(bottom = 24.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         IconButton(
@@ -51,10 +53,7 @@ fun BottomAppBar(
         }
 
         Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier
-                .size(64.dp)
-                .aspectRatio(1f)
+            contentAlignment = Alignment.TopCenter,
         ) {
             IconButton(
                 onClick = { showNewProductScreen() },

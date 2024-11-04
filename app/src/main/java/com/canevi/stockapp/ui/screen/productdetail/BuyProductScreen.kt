@@ -1,5 +1,7 @@
 package com.canevi.stockapp.ui.screen.productdetail
 
+import android.content.res.Configuration.UI_MODE_NIGHT_NO
+import android.content.res.Configuration.UI_MODE_NIGHT_YES
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
@@ -48,9 +50,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.canevi.stockapp.model.Product
 import com.canevi.stockapp.model.dto.DetailedProductDTO
 import com.canevi.stockapp.repository.ProductRepository
+import com.canevi.stockapp.ui.theme.StockAppTheme
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -63,10 +67,8 @@ fun BuyProductScreen(
     val snackbarHostState = remember { SnackbarHostState() }
 
     val nameScrollState = rememberScrollState()
-    val sizeScrollState = rememberScrollState()
     val coroutineScope = rememberCoroutineScope()
 
-    var selectedSize by remember { mutableStateOf("null") }
     var descriptionToggle by remember { mutableStateOf(false) }
     var dto: DetailedProductDTO? by remember { mutableStateOf(null) }
 
@@ -77,14 +79,12 @@ fun BuyProductScreen(
                 onNavigateToProductList()
                 return@launch
             }
-            val detailedProductDTO = productRepository.getProductDetail(productId = product.id)
             if(detailedProductDTO == null) {
                 snackbarHostState.showSnackbar("No Data Shown or Server Error")
                 onNavigateToProductList()
                 return@launch
             }
             dto = detailedProductDTO
-            selectedSize = dto?.size.toString()
         }
     }
 
@@ -92,12 +92,11 @@ fun BuyProductScreen(
     Scaffold(
         bottomBar = {
             Row(modifier = Modifier
-                .padding(18.dp)
-                .height(40.dp),
+                .padding(18.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Price",
+                    text = "Price:",
                     modifier = Modifier.weight(2f)
                 )
                 ElevatedButton(
@@ -116,7 +115,8 @@ fun BuyProductScreen(
                     )
                     Text(
                         text = "Buy",
-                        modifier = Modifier.padding(horizontal = 4.dp),
+                        fontSize = 18.sp,
+                        modifier = Modifier.padding(horizontal = 6.dp),
                         style = MaterialTheme.typography.labelLarge.copy(color = Color.White)
                     )
                 }
@@ -130,12 +130,14 @@ fun BuyProductScreen(
                 Row(modifier = Modifier.wrapContentHeight()) {
                     IconButton(
                         modifier = Modifier.padding(4.dp),
-
                         onClick = {
                             onNavigateToProductList()
                         }
                     ) {
-                        Icon(Icons.AutoMirrored.Rounded.KeyboardArrowLeft, contentDescription = "Back")
+                        Icon(
+                            Icons.AutoMirrored.Rounded.KeyboardArrowLeft,
+                            contentDescription = "Back"
+                        )
                     }
                     Box(modifier = Modifier.weight(1f))
                 }
@@ -149,8 +151,8 @@ fun BuyProductScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(600.dp)
-                        .background(color = Color.Gray)
+                        .height(500.dp)
+                        .background(color = MaterialTheme.colorScheme.secondary.copy(alpha = .4f))
                 ) {
                     Text(text = dto?.id ?: "")
                 }
@@ -162,27 +164,6 @@ fun BuyProductScreen(
                         .padding(8.dp)
                         .horizontalScroll(nameScrollState)
                 )
-                Row(
-                    modifier = Modifier.horizontalScroll(sizeScrollState),
-                ) {
-                    listOf("S", "M", "L", "XL", "XXL", "3XL", "4XL", "5XL").map {
-                        ElevatedAssistChip(
-                            modifier = Modifier.padding(horizontal = 4.dp),
-                            onClick = { selectedSize = it },
-                            enabled = it != selectedSize,
-                            label = {
-                                Text(
-                                    text = it,
-                                    style = MaterialTheme.typography.headlineSmall.copy(
-                                        color = Color.Gray,
-                                        fontSize = TextUnit(1f, TextUnitType(0))
-                                    ),
-                                    modifier = Modifier.padding(4.dp)
-                                )
-                            }
-                        )
-                    }
-                }
                 if (dto?.description != null)
                     Column(modifier = Modifier.padding(8.dp)) {
                         TextButton(
@@ -216,13 +197,36 @@ fun BuyProductScreen(
     )
 }
 
-@Preview
+@Preview(
+    name = "Dark Mode",
+    showBackground = true,
+    uiMode = UI_MODE_NIGHT_YES
+)
 @Composable
-fun BuyProductScreenPreview() {
+fun BuyProductScreenDarkPreview() {
     val product = Product(
         id = "f882ebcf-f3d2-4677-b48c-283c23e36f05",
         name = "test data",
         quantity = 12
     )
-    BuyProductScreen(product = product, onNavigateToProductList = {})
+    StockAppTheme(darkTheme = true) {
+        BuyProductScreen(product = product, onNavigateToProductList = {})
+    }
+}
+
+@Preview(
+    name = "Light Mode",
+    showBackground = true,
+    uiMode = UI_MODE_NIGHT_NO
+)
+@Composable
+fun BuyProductScreenLightPreview() {
+    val product = Product(
+        id = "f882ebcf-f3d2-4677-b48c-283c23e36f05",
+        name = "test data",
+        quantity = 12
+    )
+    StockAppTheme(darkTheme = false) {
+        BuyProductScreen(product = product, onNavigateToProductList = {})
+    }
 }

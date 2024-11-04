@@ -1,57 +1,130 @@
 package com.canevi.stockapp.ui.screen.profile
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.nestedscroll.nestedScroll
-import com.canevi.stockapp.ui.component.BottomAppBar
-import com.canevi.stockapp.ui.component.SearchBar
-import kotlinx.coroutines.launch
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProfileScreen(
-    onNavigateToNewProduct: () -> Unit,
-) {
-
+fun ProfileScreen() {
     val coroutineScope = rememberCoroutineScope()
     val snackBarHostState = remember { SnackbarHostState() }
-    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
+    val scrollState = rememberScrollState()
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackBarHostState) },
-        bottomBar = {
-            BottomAppBar(
-                showNewProductScreen = { onNavigateToNewProduct() }
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .padding(
+                    top = paddingValues.calculateTopPadding(),
+                    bottom = 4.dp,
+                )
+                .verticalScroll(scrollState),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Box(
+                modifier = Modifier
+                    .padding(vertical = 24.dp)
+                    .width(120.dp)
+                    .aspectRatio(1f)
+                    .background(Color.Gray, RoundedCornerShape(60.dp))
             )
-        },
-        topBar = {
-            TopAppBar(
-                title = { Text("Yahya Bekir Canevi") },
-                scrollBehavior = scrollBehavior
+            Text(
+                "Profile Name",
+                fontSize = 26.sp, fontWeight = FontWeight.W700, textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .padding(horizontal = 16.dp).padding(top = 16.dp,bottom = 8.dp)
             )
-        },
-        modifier = Modifier
-            .nestedScroll(scrollBehavior.nestedScrollConnection),
-        content = { innerPadding ->
-            Column(modifier = Modifier.consumeWindowInsets(innerPadding)) {
-
+            Row {
+                Text(
+                    "${88} Sold Items | ${128} Followers",
+                    fontSize = 16.sp, fontWeight = FontWeight.W400, color = Color.Gray, textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp).padding(bottom = 16.dp)
+                )
             }
+            ProfileCard("Account") { }
+            ProfileCard("Notification Settings") { }
+
+            Text(
+                "Products",
+                fontSize = 16.sp, fontWeight = FontWeight.W700, textAlign = TextAlign.Start,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp, horizontal = 16.dp)
+                    .padding(top = 12.dp)
+            )
+            ProfileCard("Liked") { }
+            ProfileCard("My Products") { }
+
+            Text(
+                "History",
+                fontSize = 16.sp, fontWeight = FontWeight.W700, textAlign = TextAlign.Start,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp, horizontal = 16.dp)
+                    .padding(top = 12.dp)
+            )
+            ProfileCard("Buy History") { }
+            ProfileCard("Search History") { }
         }
+    }
+}
+
+@Composable
+fun ProfileCard(label: String, onClick: () -> Unit) = Card(
+    onClick = { onClick() },
+    modifier = Modifier
+        .fillMaxWidth()
+        .padding(horizontal = 16.dp, vertical = 8.dp),
+    shape = RoundedCornerShape(8.dp),
+    colors = CardDefaults.cardColors(
+        containerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = .2f),
+        contentColor = MaterialTheme.colorScheme.onSurface
     )
+) {
+    Row(
+        modifier = Modifier.padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            label,
+            fontSize = 16.sp, fontWeight = FontWeight.Normal,
+            modifier = Modifier.weight(1f)
+        )
+        Icon(
+            Icons.AutoMirrored.Rounded.KeyboardArrowRight, "",
+            modifier = Modifier.padding(horizontal = 8.dp)
+        )
+    }
 }

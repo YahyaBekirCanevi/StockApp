@@ -2,8 +2,6 @@ package com.canevi.stockapp.ui.screen.productdetail
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.gestures.Orientation
-import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
@@ -42,15 +40,13 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.canevi.stockapp.model.Product
-import com.canevi.stockapp.model.dto.DetailedProductDTO
 import com.canevi.stockapp.repository.ProductRepository
 import kotlinx.coroutines.launch
-import kotlin.collections.mutableListOf
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NewProductScreen(
-    onNavigateToProductList: () -> Unit,
+    onBack: () -> Unit,
 ) {
     val productRepository = ProductRepository(LocalContext.current)
     val coroutineScope = rememberCoroutineScope()
@@ -73,7 +69,7 @@ fun NewProductScreen(
             TopAppBar(
                 title = {},
                 navigationIcon = {
-                    IconButton(onClick = { onNavigateToProductList() }) {
+                    IconButton(onClick = { onBack() }) {
                         Icon(Icons.Default.Close, contentDescription = "Close")
                     }
                 }
