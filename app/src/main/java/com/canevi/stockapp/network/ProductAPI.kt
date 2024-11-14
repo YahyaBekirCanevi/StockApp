@@ -1,6 +1,5 @@
 package com.canevi.stockapp.network
 
-import com.canevi.stockapp.model.Category
 import com.canevi.stockapp.model.Product
 import retrofit2.http.Body
 import retrofit2.http.DELETE
@@ -23,9 +22,9 @@ interface ProductAPI {
     suspend fun searchProducts(@Query("name") name: String): List<Product>
 
     @GET("product/{productId}/category")
-    suspend fun getCategoriesOfProduct(@Path("productId") productId: String): List<Category>
+    suspend fun getCategoriesOfProduct(@Path("productId") productId: String): Map<String, String>
 
     @GET("product/{productId}/images")
-    suspend fun getImagesForProduct(@Path("productId") productId: String): List<Map<String, String>>
+    suspend fun getImagesForProduct(@Path("productId") productId: String): Map<String, String>
 
 }

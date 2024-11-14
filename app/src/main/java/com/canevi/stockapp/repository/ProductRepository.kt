@@ -1,7 +1,6 @@
 package com.canevi.stockapp.repository
 
 import android.content.Context
-import com.canevi.stockapp.model.Category
 import com.canevi.stockapp.model.Product
 import com.canevi.stockapp.network.ApiClient
 import com.canevi.stockapp.network.ProductAPI
@@ -49,22 +48,22 @@ class ProductRepository(context: Context) {
         emptyList()
     }
 
-    suspend fun getCategoriesOfProduct(productId: String): List<Category> = try {
+    suspend fun getCategoriesOfProduct(productId: String): Map<String, String> = try {
         withContext(Dispatchers.IO) {
-            api?.getCategoriesOfProduct(productId) ?: emptyList()
+            api?.getCategoriesOfProduct(productId) ?: emptyMap()
         }
     } catch (e: IOException) {
         e.printStackTrace()
-        emptyList()
+        emptyMap()
     }
 
-    suspend fun getImagesForProduct(productId: String): List<Map<String, String>> = try {
+    suspend fun getImagesForProduct(productId: String): Map<String, String> = try {
         withContext(Dispatchers.IO) {
-            api?.getImagesForProduct(productId) ?: emptyList()
+            api?.getImagesForProduct(productId) ?: emptyMap()
         }
     } catch (e: IOException) {
         e.printStackTrace()
-        emptyList()
+        emptyMap()
     }
 
 }
