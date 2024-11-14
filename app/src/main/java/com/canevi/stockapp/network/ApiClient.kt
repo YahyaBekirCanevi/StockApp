@@ -1,7 +1,6 @@
 package com.canevi.stockapp.network
 
 import android.content.Context
-import com.canevi.stockapp.util.Environment
 import com.canevi.stockapp.util.NetworkUtils
 import okhttp3.OkHttpClient
 import okhttp3.Request

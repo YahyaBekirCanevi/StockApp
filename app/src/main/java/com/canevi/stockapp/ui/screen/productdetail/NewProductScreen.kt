@@ -5,6 +5,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -29,13 +31,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -53,15 +55,13 @@ fun NewProductScreen(
     val snackBarHostState = remember { SnackbarHostState() }
 
     var name by remember { mutableStateOf("") }
-    var quantity by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
-    var size by remember { mutableStateOf("") }
-    var attributes by remember { mutableStateOf(mapOf<String, String>()) }
+    var price by remember { mutableDoubleStateOf(0.0.toDouble()) }
     var categories = remember { mutableStateListOf<String>() }
 
     var newCategory by remember { mutableStateOf("") }
     val openDialog = remember { mutableStateOf(false) }
-    val scrollState = rememberScrollState()
+    val imagesScrollState = rememberScrollState()
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackBarHostState) },
@@ -79,15 +79,65 @@ fun NewProductScreen(
             Column(modifier = Modifier
                 .fillMaxWidth()
                 .padding(innerPadding)) {
-                Column(modifier = Modifier.weight(1f).padding(16.dp)) {
+                Column(modifier = Modifier
+                    .weight(1f)
+                    .padding(16.dp)) {
+
+                    Row(Modifier.horizontalScroll(imagesScrollState)) {
+                        Box(
+                            Modifier
+                                .size(120.dp)
+                                .padding(end = 8.dp)
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(MaterialTheme.colorScheme.tertiary)
+                                .border(
+                                    1.dp,
+                                    MaterialTheme.colorScheme.primary,
+                                    RoundedCornerShape(16.dp)
+                                ),
+                                contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                "Add\nPhoto",
+                                color = MaterialTheme.colorScheme.primary,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .wrapContentHeight()
+                            )
+                        }
+                        listOf(1, 2, 3, 4, 5).map {
+                            Box(
+                                Modifier
+                                    .size(120.dp)
+                                    .padding(end = 8.dp)
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .background(MaterialTheme.colorScheme.tertiary)
+                                    .border(
+                                        1.dp,
+                                        MaterialTheme.colorScheme.primary,
+                                        RoundedCornerShape(16.dp)
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    it.toString(),
+                                    color = Color.White,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .wrapContentHeight()
+                                )
+                            }
+                        }
+                    }
                     CustomTextFieldWithLabel(label = "Product Name", value = name) { name = it }
-                    CustomTextFieldWithLabel(label = "Quantity", value = quantity) {
-                        quantity = it
+                    CustomTextFieldWithLabel(label = "Price", value = price.toString()) {
+                        price = it.toDouble()
                     }
                     CustomTextFieldWithLabel(label = "Description", value = description) {
                         description = it
                     }
-                    CustomTextFieldWithLabel(label = "Size", value = size) { size = it }
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically
@@ -100,16 +150,16 @@ fun NewProductScreen(
                         IconButton(onClick = {
                             openDialog.value = true
                         }, modifier = Modifier.padding(horizontal = 8.dp)) {
-                            Icon(Icons.Filled.Add, "Add Category", tint = Color.Gray)
+                            Icon(Icons.Filled.Add, "Add Category", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                         }
                     }
-                    Row(
-                        modifier = Modifier
+                    LazyVerticalGrid(
+                        columns = GridCells.Adaptive(minSize = 100.dp),
+                        modifier = Modifier.padding(8.dp)
                             .wrapContentHeight()
                             .fillMaxWidth()
-                            .horizontalScroll(scrollState)
                     ) {
-                        categories.map {
+                        items(categories.size) { index ->
                             Row(
                                 modifier = Modifier
                                     .padding(end = 12.dp)
@@ -123,11 +173,11 @@ fun NewProductScreen(
                                 horizontalArrangement = Arrangement.Absolute.SpaceAround
                             ) {
                                 Text(
-                                    it, fontSize = 16.sp, minLines = 1, maxLines = 1,
+                                    categories[index], fontSize = 16.sp, minLines = 1, maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
                                     modifier = Modifier.widthIn(min = 16.dp, max = 256.dp)
                                 )
-                                IconButton(onClick = { categories.remove(it) }) {
+                                IconButton(onClick = { categories.removeAt(index) }) {
                                     Icon(
                                         Icons.Default.Close,
                                         "Remove",
@@ -141,18 +191,11 @@ fun NewProductScreen(
 
                 Button(
                     onClick = {
-                        /*val productDTO = DetailedProductDTO(
-                            id = "",  // Set appropriate ID if necessary
-                            name = name,
-                            quantity = quantity.toIntOrNull() ?: 0,
-                            description = if (description.isNotBlank()) description else null,
-                            size = if (size.isNotBlank()) size else null,
-                            attributes = attributes,  // Update if you allow user to input attributes
-                            categories = categories.split(",").map { it.trim() }
-                        )*/
                         val product = Product(
                             name = name,
-                            quantity = quantity.toIntOrNull() ?: 0
+                            description = description,
+                            price = price,
+                            categoryIdList = categories
                         )
 
                         coroutineScope.launch {
@@ -174,13 +217,7 @@ fun NewProductScreen(
                         .padding(top = 16.dp, start = 16.dp, end = 16.dp, bottom = 32.dp)
                         .fillMaxWidth()
                         .background(
-                            Brush.linearGradient(
-                                listOf(
-                                    MaterialTheme.colorScheme.primary,
-                                    MaterialTheme.colorScheme.secondary,
-                                    MaterialTheme.colorScheme.tertiary
-                                )
-                            ),
+                            MaterialTheme.colorScheme.primary,
                             shape = RoundedCornerShape(16.dp)
                         )
                         .clip(RoundedCornerShape(16.dp))
@@ -203,7 +240,7 @@ fun NewProductScreen(
                     Surface(
                         modifier = Modifier
                             .wrapContentWidth()
-                            .wrapContentHeight(),
+                            .wrapContentWidth(),
                         shape = MaterialTheme.shapes.large
                     ) {
                         Column(
@@ -211,13 +248,45 @@ fun NewProductScreen(
                                 .padding(16.dp)
                                 .fillMaxWidth(),
                         ) {
-                            CustomTextField(label = "Category", value = newCategory) {
-                                newCategory = it
+                            BasicTextField(
+                                value = newCategory,
+                                onValueChange = { newCategory = it },
+                                textStyle = TextStyle(fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurface),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 8.dp),
+                                singleLine = true,
+                                cursorBrush = SolidColor(MaterialTheme.colorScheme.onSurface),
+                                decorationBox = { innerTextField ->
+                                    if (newCategory.isEmpty()) {
+                                        Text(text = "Enter Category", color = Color.Gray, fontSize = 18.sp)
+                                    }
+                                    innerTextField()
+                                },
+                                keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next)
+                            )
+                            LazyVerticalGrid(
+                                columns = GridCells.Adaptive(minSize = 100.dp),
+                                modifier = Modifier.padding(8.dp)
+                            ) {
+                                items(categories.size) { index ->
+                                    Box(
+                                        modifier = Modifier.padding(8.dp)
+                                            .background(MaterialTheme.colorScheme.secondary,
+                                                RoundedCornerShape(16.dp))
+                                            .padding(horizontal = 12.dp, vertical = 8.dp)
+                                    ) {
+                                        Text(
+                                            text = categories[index],
+                                            color = MaterialTheme.colorScheme.onSurface,
+                                            style = MaterialTheme.typography.bodyMedium
+                                        )
+                                    }
+                                }
                             }
                             Button(
                                 onClick = {
                                     categories.add(newCategory)
-                                    openDialog.value = false
                                     newCategory = ""
                                 },
                                 colors = ButtonColors(
@@ -230,13 +299,7 @@ fun NewProductScreen(
                                     .padding(top = 16.dp, start = 16.dp, end = 16.dp, bottom = 0.dp)
                                     .fillMaxWidth()
                                     .background(
-                                        Brush.linearGradient(
-                                            listOf(
-                                                MaterialTheme.colorScheme.primary,
-                                                MaterialTheme.colorScheme.secondary,
-                                                MaterialTheme.colorScheme.tertiary
-                                            )
-                                        ),
+                                        MaterialTheme.colorScheme.primary,
                                         shape = RoundedCornerShape(16.dp)
                                     )
                                     .clip(RoundedCornerShape(16.dp))
@@ -246,12 +309,12 @@ fun NewProductScreen(
                                         Icons.Default.Add,
                                         "Add Category",
                                         modifier = Modifier.padding(end = 8.dp),
-                                        tint = MaterialTheme.colorScheme.inverseOnSurface
+                                        tint = MaterialTheme.colorScheme.inverseOnSurface,
                                     )
                                     Text(
                                         "Add Category",
                                         fontSize = 16.sp,
-                                        color = MaterialTheme.colorScheme.inverseOnSurface
+                                        color = MaterialTheme.colorScheme.inverseOnSurface,
                                     )
                                 }
                             }
@@ -268,7 +331,7 @@ fun CustomTextFieldWithLabel(label: String, value: String, onValueChange: (Strin
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(bottom = 12.dp)
+            .padding(vertical = 8.dp)
     ) {
         Text(text = label, fontSize = 16.sp, color = Color.Gray, fontWeight = FontWeight.W700)
         CustomTextField(label = label, value = value) {

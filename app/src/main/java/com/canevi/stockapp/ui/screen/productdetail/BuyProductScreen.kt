@@ -1,28 +1,23 @@
 package com.canevi.stockapp.ui.screen.productdetail
 
-import android.content.res.Configuration.UI_MODE_NIGHT_NO
-import android.content.res.Configuration.UI_MODE_NIGHT_YES
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.consumeWindowInsets
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.rounded.KeyboardArrowLeft
 import androidx.compose.material.icons.rounded.ShoppingCart
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.ElevatedAssistChip
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -36,26 +31,19 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.TextUnit
-import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.canevi.stockapp.model.Category
 import com.canevi.stockapp.model.Product
-import com.canevi.stockapp.model.dto.DetailedProductDTO
-import com.canevi.stockapp.repository.ProductRepository
 import com.canevi.stockapp.ui.theme.StockAppTheme
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -63,31 +51,14 @@ fun BuyProductScreen(
     product: Product,
     onNavigateToProductList: () -> Unit,
 ) {
-    val productRepository = ProductRepository(LocalContext.current)
     val snackbarHostState = remember { SnackbarHostState() }
 
+    val scrollState = rememberScrollState()
     val nameScrollState = rememberScrollState()
-    val coroutineScope = rememberCoroutineScope()
-
     var descriptionToggle by remember { mutableStateOf(false) }
-    var dto: DetailedProductDTO? by remember { mutableStateOf(null) }
 
-    LaunchedEffect(Unit) {
-        coroutineScope.launch {
-            if (product.id == null) {
-                snackbarHostState.showSnackbar("No Data Shown or Server Error")
-                onNavigateToProductList()
-                return@launch
-            }
-            if(detailedProductDTO == null) {
-                snackbarHostState.showSnackbar("No Data Shown or Server Error")
-                onNavigateToProductList()
-                return@launch
-            }
-            dto = detailedProductDTO
-        }
-    }
-
+    val categories = remember { mutableListOf<Category>() }
+    val images = remember { mutableListOf<Map<String, String>>() }
 
     Scaffold(
         bottomBar = {
@@ -96,13 +67,13 @@ fun BuyProductScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Price:",
+                    text = "${product.price} TL",
                     modifier = Modifier.weight(2f)
                 )
                 ElevatedButton(
                     onClick = { /*TODO*/ },
                     colors = ButtonDefaults.elevatedButtonColors()
-                        .copy(containerColor = Color(0.2f, 0.6f,0.2f, alpha = 1f)),
+                        .copy(containerColor = Color(0.2f, 0.6f, 0.2f, alpha = 1f)),
                     modifier = Modifier.weight(1f)
                 ) {
                     Icon(
@@ -147,24 +118,28 @@ fun BuyProductScreen(
             ))
         },
         content = {
-            Column(modifier = Modifier.padding(top = it.calculateTopPadding() * 0)) {
+            Column(
+                modifier = Modifier
+                    .padding(top = it.calculateTopPadding() * 0, bottom = it.calculateBottomPadding())
+                    .verticalScroll(scrollState)
+            ) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(500.dp)
                         .background(color = MaterialTheme.colorScheme.secondary.copy(alpha = .4f))
                 ) {
-                    Text(text = dto?.id ?: "")
+                    Text(text = product.id.toString())
                 }
                 Text(
-                    text = dto?.name ?: "",
+                    text = product.name,
                     style = MaterialTheme.typography.headlineSmall,
                     maxLines = 1,
                     modifier = Modifier
                         .padding(8.dp)
                         .horizontalScroll(nameScrollState)
                 )
-                if (dto?.description != null)
+                if (product.description.isNotEmpty())
                     Column(modifier = Modifier.padding(8.dp)) {
                         TextButton(
                             onClick = { descriptionToggle = !descriptionToggle },
@@ -187,7 +162,7 @@ fun BuyProductScreen(
                         }
                         if (descriptionToggle)
                             Text(
-                                text = dto?.description ?: "",
+                                text = product.description + product.description,
                                 style = MaterialTheme.typography.bodyMedium,
                                 modifier = Modifier.padding(vertical = 4.dp)
                             )
@@ -197,34 +172,22 @@ fun BuyProductScreen(
     )
 }
 
-@Preview(
-    name = "Dark Mode",
-    showBackground = true,
-    uiMode = UI_MODE_NIGHT_YES
-)
-@Composable
-fun BuyProductScreenDarkPreview() {
-    val product = Product(
-        id = "f882ebcf-f3d2-4677-b48c-283c23e36f05",
-        name = "test data",
-        quantity = 12
-    )
-    StockAppTheme(darkTheme = true) {
-        BuyProductScreen(product = product, onNavigateToProductList = {})
-    }
-}
-
-@Preview(
-    name = "Light Mode",
-    showBackground = true,
-    uiMode = UI_MODE_NIGHT_NO
-)
+@Preview
 @Composable
 fun BuyProductScreenLightPreview() {
+    /*val product = ProductDTO(
+        id = "f882ebcf-f3d2-4677-b48c-283c23e36f05",
+        name = "test data",
+        description = "description",
+        price = 123.459,
+        categories = listOf("General"),
+        images = listOf()
+    )*/
     val product = Product(
         id = "f882ebcf-f3d2-4677-b48c-283c23e36f05",
         name = "test data",
-        quantity = 12
+        description = "description",
+        price = 123.459
     )
     StockAppTheme(darkTheme = false) {
         BuyProductScreen(product = product, onNavigateToProductList = {})

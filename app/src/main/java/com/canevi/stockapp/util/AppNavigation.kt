@@ -77,13 +77,9 @@ fun <T : Any> navigateToTap(navController: NavHostController, route: T) {
         navController.graph.startDestinationRoute?.let { homeScreen ->
             popUpTo(homeScreen) {
                 saveState = true
-                //saveState = true:
-                //It allows saving the states of these fragments during the process of clearing the fragment/states up to the point specified with popUpTo. In this way, the contents of the fragments are not lost.
             }
             restoreState = true
-            //It allows restoring the old fragment states after the redirection process. In this way, when the user returns to the navigation history, he can see the old states of the fragments.
             launchSingleTop = true
-            //During the routing process to the target route, if the target route is already at the top (existing one), it allows using the existing instance instead of creating a new instance. This prevents a page from being opened repeatedly.
         }
     }
 }

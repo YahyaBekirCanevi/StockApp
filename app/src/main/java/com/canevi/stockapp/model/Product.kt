@@ -6,5 +6,7 @@ import kotlinx.serialization.Serializable
 data class Product(
     val id: String? = null,
     val name: String,
-    val quantity: Int
+    val description: String,
+    val price: Double,
+    val categoryIdList: MutableList<String> = mutableListOf()
 )
