@@ -18,7 +18,7 @@ import androidx.compose.ui.Modifier
 import com.canevi.stockapp.model.Product
 import com.canevi.stockapp.ui.component.BottomAppBar
 import com.canevi.stockapp.ui.screen.products.ProductGridScreen
-import com.canevi.stockapp.ui.screen.profile.ProfileScreen
+import com.canevi.stockapp.ui.screen.profile.ProfileNavigation
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -51,7 +51,7 @@ fun AppScreen(
                     onNavigateToProductBuy = onNavigateToProductBuy
                 )
             } else {
-                ProfileScreen()
+                ProfileNavigation()
             }
         }
         BottomAppBar(

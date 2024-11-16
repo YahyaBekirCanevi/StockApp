@@ -3,9 +3,11 @@ package com.canevi.stockapp.ui.screen.productdetail
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.ImageDecoder
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -21,6 +23,7 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Button
@@ -56,6 +59,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.canevi.stockapp.model.Category
 import com.canevi.stockapp.model.Product
+import com.canevi.stockapp.model.dto.ImageDTO
 import com.canevi.stockapp.repository.CategoryRepository
 import com.canevi.stockapp.repository.ProductRepository
 import kotlinx.coroutines.Dispatchers
@@ -70,8 +74,8 @@ fun NewProductScreen(
 ) {
     val currentContext = LocalContext.current
 
-    val productRepository = ProductRepository(currentContext)
     val categoryRepository = CategoryRepository(currentContext)
+    val productRepository = ProductRepository(currentContext)
 
     val coroutineScope = rememberCoroutineScope()
     val snackBarHostState = remember { SnackbarHostState() }
@@ -86,7 +90,9 @@ fun NewProductScreen(
 
     val imagesScrollState = rememberScrollState()
     var newCategory by remember { mutableStateOf("") }
-    val openDialog = remember { mutableStateOf(false) }
+    val openCategoryDialog = remember { mutableStateOf(false) }
+    val imageDialog = remember { mutableStateOf<BitmapPainter?>(null) }
+    var exitWithoutSaveDialog by remember { mutableStateOf(false) }
 
 
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) {
@@ -104,13 +110,55 @@ fun NewProductScreen(
         }
     }
 
+    fun saveProduct() {
+        val product = Product(
+            name = name,
+            description = description,
+            price = price.toDouble()
+        )
+
+        coroutineScope.launch {
+            val newProduct = productRepository.addProduct(product)
+            if (newProduct == null) {
+                snackBarHostState.showSnackbar("Couldn't add new product!")
+                return@launch
+            }
+            val addImagesResponse = productRepository.addImagesToProduct(
+                newProduct.id!!,
+                images.map { ImageDTO.ofProduct(newProduct.id, it) }
+            )
+            if (addImagesResponse.isEmpty()) {
+                snackBarHostState.showSnackbar("Couldn't add images to product! Try again in your profile.")
+                return@launch
+            }
+            val addCategoryResponse = productRepository.addCategoriesToProduct(
+                newProduct.id,
+                categories
+            )
+            if (addCategoryResponse.isEmpty()) {
+                snackBarHostState.showSnackbar("Couldn't add categories to product! Try again in your profile.")
+                return@launch
+            }
+        }
+    }
+
+    fun isEmpty() {
+        exitWithoutSaveDialog = !(name.isEmpty() && description.isEmpty() &&
+                price.isEmpty() && categories.isEmpty() && images.isEmpty())
+        if (!exitWithoutSaveDialog) onBack()
+    }
+
+    BackHandler {
+        isEmpty()
+    }
+
     Scaffold(
         snackbarHost = { SnackbarHost(snackBarHostState) },
         topBar = {
             TopAppBar(
                 title = {},
                 navigationIcon = {
-                    IconButton(onClick = { onBack() }) {
+                    IconButton(onClick = { isEmpty() }) {
                         Icon(Icons.Default.Close, contentDescription = "Close")
                     }
                 }
@@ -133,7 +181,7 @@ fun NewProductScreen(
                                 .size(120.dp)
                                 .padding(end = 8.dp)
                                 .clip(RoundedCornerShape(16.dp))
-                                .background(MaterialTheme.colorScheme.tertiary)
+                                .background(MaterialTheme.colorScheme.surface)
                                 .border(
                                     1.dp,
                                     MaterialTheme.colorScheme.primary,
@@ -168,19 +216,37 @@ fun NewProductScreen(
                                 contentAlignment = Alignment.Center
                             ) {
                                 BitmapFactory.decodeByteArray(image, 0, image.size)?.let { bitmap ->
-                                    Image(
-                                        painter = BitmapPainter(bitmap.asImageBitmap()),
-                                        contentDescription = "Loaded image",
-                                        modifier = Modifier.fillMaxSize(),
-                                        contentScale = ContentScale.Crop
-                                    )
+                                    val painter = BitmapPainter(bitmap.asImageBitmap())
+                                    Box(Modifier.clickable(onClick = {
+                                        imageDialog.value = painter
+                                    })) {
+                                        Image(
+                                            painter = painter,
+                                            contentDescription = "Loaded image",
+                                            modifier = Modifier.fillMaxSize(),
+                                            contentScale = ContentScale.Crop
+                                        )
+                                        Box(
+                                            Modifier
+                                                .padding(8.dp)
+                                                .size(20.dp)
+                                                .align(Alignment.TopEnd)
+                                                .clickable(onClick = {
+                                                    images.remove(image)
+                                                })
+                                                .background(Color.Gray, RoundedCornerShape(50.dp))
+                                                .padding(2.dp)
+                                        ) {
+                                            Icon(Icons.Filled.Clear, "", tint = Color.White)
+                                        }
+                                    }
                                 }
                             }
                         }
                     }
                     CustomTextFieldWithLabel(label = "Product Name", value = name) { name = it }
                     CustomTextFieldWithLabel(label = "Price", value = price, keyboardType = KeyboardType.Decimal) {
-                        price = it.replace('.', ',')
+                        price = it.replace(',', '.')
                     }
                     CustomTextFieldWithLabel(label = "Description", value = description) {
                         description = it
@@ -195,7 +261,7 @@ fun NewProductScreen(
                             modifier = Modifier.weight(1f)
                         )
                         IconButton(onClick = {
-                            openDialog.value = true
+                            openCategoryDialog.value = true
                         }, modifier = Modifier.padding(horizontal = 8.dp)) {
                             Icon(Icons.Filled.Add, "Add Category", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                         }
@@ -238,23 +304,9 @@ fun NewProductScreen(
                 }
 
                 Button(
-                    onClick = {
-                        val product = Product(
-                            name = name,
-                            description = description,
-                            price = price.toDouble(),
-                            categoryIdList = categories
-                        )
-
-                        coroutineScope.launch {
-                            val newProduct = productRepository
-                                .addProduct(product)
-                            if (newProduct == null) {
-                                snackBarHostState.showSnackbar("Couldn't add new product!")
-                                return@launch
-                            }
-                        }
-                    },
+                    onClick = { saveProduct() },
+                    enabled = name.isNotEmpty() && price.isNotEmpty() && description.isNotEmpty()
+                            && categories.isNotEmpty() && images.isNotEmpty(),
                     colors = ButtonColors(
                         containerColor = Color.Transparent,
                         disabledContainerColor = Color.Transparent,
@@ -278,10 +330,10 @@ fun NewProductScreen(
                 }
             }
 
-            if (openDialog.value) {
+            if (openCategoryDialog.value) {
                 BasicAlertDialog(
                     onDismissRequest = {
-                        openDialog.value = false
+                        openCategoryDialog.value = false
                         newCategory = ""
                     }
                 ) {
@@ -385,6 +437,74 @@ fun NewProductScreen(
                                         color = MaterialTheme.colorScheme.inverseOnSurface,
                                     )
                                 }
+                            }
+                        }
+                    }
+                }
+            }
+            if (imageDialog.value != null) {
+                BasicAlertDialog(
+                    onDismissRequest = {
+                        imageDialog.value = null
+                    }
+                ) {
+                    Image(
+                        painter = imageDialog.value!!,
+                        contentDescription = "Loaded image",
+                        modifier = Modifier.fillMaxWidth(),
+                        contentScale = ContentScale.FillWidth
+                    )
+                }
+            }
+            if (exitWithoutSaveDialog) {
+                BasicAlertDialog(
+                    onDismissRequest = {
+                        exitWithoutSaveDialog = false
+                    }
+                ) {
+                    Column(Modifier.background(MaterialTheme.colorScheme.surface).padding(8.dp)) {
+                        Text(
+                            "Exiting Without Saving",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.W700,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(16.dp).fillMaxWidth()
+                        )
+                        Text(
+                            "Are you sure to exit without saving?",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.Gray,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(bottom = 16.dp).padding(horizontal = 32.dp).fillMaxWidth()
+                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceEvenly,
+                        ) {
+                            Button(
+                                onClick = { onBack() },
+                                modifier = Modifier.padding(start = 8.dp).weight(1f),
+                                colors = ButtonColors(
+                                    containerColor = Color.Red.copy(alpha = .6f),
+                                    contentColor = MaterialTheme.colorScheme.onSurface,
+                                    disabledContainerColor = Color.Red.copy(alpha = .6f),
+                                    disabledContentColor = MaterialTheme.colorScheme.onSurface,
+                                )
+                            ) {
+                                Text("Don't Save")
+                            }
+                            Button(
+                                onClick = { exitWithoutSaveDialog = false },
+                                modifier = Modifier.padding(horizontal = 8.dp).weight(1f),
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
+                                colors = ButtonColors(
+                                    containerColor = MaterialTheme.colorScheme.surface,
+                                    contentColor = MaterialTheme.colorScheme.primary,
+                                    disabledContainerColor = MaterialTheme.colorScheme.surface,
+                                    disabledContentColor = MaterialTheme.colorScheme.primary,
+                                )
+                            ) {
+                                Text("Cancel")
                             }
                         }
                     }

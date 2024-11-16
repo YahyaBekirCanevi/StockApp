@@ -78,14 +78,14 @@ fun SearchBar(
             },
             textStyle = TextStyle(
                 fontSize = 18.sp,
-                color = Color.White,
+                color = MaterialTheme.colorScheme.onSurface,
             ),
             modifier = Modifier
                 .weight(1f)
                 .padding(end = 8.dp, start = 8.dp),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
             singleLine = true,
-            cursorBrush = SolidColor(Color.White),
+            cursorBrush = SolidColor(MaterialTheme.colorScheme.onSurface),
             decorationBox = { innerTextField ->
                 if (searchQuery.isEmpty()) {
                     Text(

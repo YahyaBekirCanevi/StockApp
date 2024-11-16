@@ -12,42 +12,20 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.canevi.stockapp.model.Product
-import com.canevi.stockapp.model.dto.ProductDTO
-import com.canevi.stockapp.repository.ProductOrchestrationRepository
-import kotlinx.coroutines.launch
 
 @Composable
 fun ProductCard(
     product: Product,
     onNavigateToProductBuy: (Product) -> Unit,
 ) {
-    val productOrchestrationRepository = ProductOrchestrationRepository(LocalContext.current)
-    val coroutineScope = rememberCoroutineScope()
-    var dto by remember { mutableStateOf<ProductDTO?>(null) }
-
     Card(
         onClick = {
-            if (dto == null) {
-                coroutineScope.launch {
-                    dto = productOrchestrationRepository.readProduct(product.id.toString())
-                }
-            }
-            if(dto != null) {
-                onNavigateToProductBuy(product)
-            } else {
-                /// some error message
-            }
+            onNavigateToProductBuy(product)
         },
         modifier = Modifier
             .fillMaxWidth()

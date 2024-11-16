@@ -59,6 +59,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.canevi.stockapp.model.Product
+import com.canevi.stockapp.model.dto.ImageDTO
 import com.canevi.stockapp.repository.ProductRepository
 import com.canevi.stockapp.ui.theme.StockAppTheme
 import java.util.Base64
@@ -70,7 +71,7 @@ fun BuyProductScreen(
     onNavigateToProductList: () -> Unit,
 ) {
     val productRepository = ProductRepository(LocalContext.current)
-    val snackbarHostState = remember { SnackbarHostState() }
+    val snackBarHostState = remember { SnackbarHostState() }
 
     val scrollState = rememberScrollState()
     val nameScrollState = rememberScrollState()
@@ -84,15 +85,16 @@ fun BuyProductScreen(
     LaunchedEffect(Unit) {
         categories = productRepository.getCategoriesOfProduct(product.id.toString()).toMutableMap()
         productRepository.getImagesForProduct(product.id.toString()).forEach {
-            images.put(it.key, Base64.getDecoder().decode(it.value))
+            images.put(it.id.toString(), Base64.getDecoder().decode(ImageDTO.decode(it.imageData)))
         }
         imagePagerState = PagerState(pageCount = { images.size })
     }
 
     Scaffold(
         bottomBar = {
-            Row(modifier = Modifier
-                .padding(18.dp),
+            Row(
+                modifier = Modifier
+                    .padding(18.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
@@ -123,28 +125,30 @@ fun BuyProductScreen(
             }
         },
         snackbarHost = {
-            SnackbarHost(snackbarHostState)
+            SnackbarHost(snackBarHostState)
         },
         topBar = {
-            TopAppBar(title = {
-                Row(modifier = Modifier.wrapContentHeight()) {
-                    IconButton(
-                        modifier = Modifier.padding(4.dp),
-                        onClick = {
-                            onNavigateToProductList()
+            TopAppBar(
+                title = {
+                    Row(modifier = Modifier.wrapContentHeight()) {
+                        IconButton(
+                            modifier = Modifier.padding(4.dp),
+                            onClick = {
+                                onNavigateToProductList()
+                            }
+                        ) {
+                            Icon(
+                                Icons.AutoMirrored.Rounded.KeyboardArrowLeft,
+                                contentDescription = "Back"
+                            )
                         }
-                    ) {
-                        Icon(
-                            Icons.AutoMirrored.Rounded.KeyboardArrowLeft,
-                            contentDescription = "Back"
-                        )
+                        Box(modifier = Modifier.weight(1f))
                     }
-                    Box(modifier = Modifier.weight(1f))
-                }
-            }, colors = TopAppBarDefaults.topAppBarColors().copy(
-                containerColor = Color.Transparent,
-                scrolledContainerColor = MaterialTheme.colorScheme.background,
-            ))
+                }, colors = TopAppBarDefaults.topAppBarColors().copy(
+                    containerColor = Color.Transparent,
+                    scrolledContainerColor = MaterialTheme.colorScheme.background,
+                )
+            )
         },
         content = {
             Column(
@@ -211,35 +215,35 @@ fun BuyProductScreen(
                             )
                     }
                 }
-                LazyVerticalGrid(
-                    columns = GridCells.Adaptive(minSize = 100.dp),
-                    modifier = Modifier
-                        .padding(8.dp)
-                        .wrapContentHeight()
-                        .fillMaxWidth()
-                ) {
-                    items(categories.size) { index ->
-                        Row(
-                            modifier = Modifier
-                                .padding(end = 12.dp)
-                                .border(
-                                    1.dp,
-                                    MaterialTheme.colorScheme.tertiary,
-                                    RoundedCornerShape(12.dp)
+                if (categories.isNotEmpty())
+                    LazyVerticalGrid(
+                        columns = GridCells.Adaptive(minSize = 100.dp),
+                        modifier = Modifier
+                            .padding(8.dp)
+                            .fillMaxWidth()
+                    ) {
+                        items(categories.size) { index ->
+                            Row(
+                                modifier = Modifier
+                                    .padding(end = 12.dp)
+                                    .border(
+                                        1.dp,
+                                        MaterialTheme.colorScheme.tertiary,
+                                        RoundedCornerShape(12.dp)
+                                    )
+                                    .padding(start = 16.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Absolute.SpaceAround
+                            ) {
+                                Text(
+                                    categories.entries.toList()[index].value,
+                                    fontSize = 16.sp, minLines = 1, maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.widthIn(min = 16.dp, max = 256.dp)
                                 )
-                                .padding(start = 16.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Absolute.SpaceAround
-                        ) {
-                            Text(
-                                categories.entries.toList()[index].value,
-                                fontSize = 16.sp, minLines = 1, maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.widthIn(min = 16.dp, max = 256.dp)
-                            )
+                            }
                         }
                     }
-                }
             }
         }
     )

@@ -1,6 +1,7 @@
 package com.canevi.stockapp.network
 
 import com.canevi.stockapp.model.Product
+import com.canevi.stockapp.model.dto.ImageDTO
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
@@ -25,6 +26,11 @@ interface ProductAPI {
     suspend fun getCategoriesOfProduct(@Path("productId") productId: String): Map<String, String>
 
     @GET("product/{productId}/images")
-    suspend fun getImagesForProduct(@Path("productId") productId: String): Map<String, String>
+    suspend fun getImagesForProduct(@Path("productId") productId: String): List<ImageDTO>
 
+    @POST("product/{productId}/images")
+    suspend fun addImagesToProduct(@Path("productId") productId: String, @Body imageFiles: List<ImageDTO>): String
+
+    @POST("product/{productId}/category")
+    suspend fun addCategoriesToProduct(@Path("productId") productId: String, @Body categories: List<String>): String
 }

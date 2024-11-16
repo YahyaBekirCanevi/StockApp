@@ -24,7 +24,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -35,8 +34,9 @@ import androidx.compose.ui.unit.sp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProfileScreen() {
-    val coroutineScope = rememberCoroutineScope()
+fun ProfileScreen(
+    onSubMenu: (Screen) -> Unit
+) {
     val snackBarHostState = remember { SnackbarHostState() }
     val scrollState = rememberScrollState()
 
@@ -63,18 +63,20 @@ fun ProfileScreen() {
                 "Profile Name",
                 fontSize = 26.sp, fontWeight = FontWeight.W700, textAlign = TextAlign.Center,
                 modifier = Modifier
-                    .padding(horizontal = 16.dp).padding(top = 16.dp,bottom = 8.dp)
+                    .padding(horizontal = 16.dp)
+                    .padding(top = 16.dp, bottom = 8.dp)
             )
             Row {
                 Text(
                     "${88} Sold Items | ${128} Followers",
                     fontSize = 16.sp, fontWeight = FontWeight.W400, color = Color.Gray, textAlign = TextAlign.Center,
                     modifier = Modifier
-                        .padding(horizontal = 16.dp).padding(bottom = 16.dp)
+                        .padding(horizontal = 16.dp)
+                        .padding(bottom = 16.dp)
                 )
             }
-            ProfileCard("Account") { }
-            ProfileCard("Notification Settings") { }
+            ProfileCard("Account") { onSubMenu(Screen.Account) }
+            ProfileCard("Notification Settings") { onSubMenu(Screen.NotificationSettings) }
 
             Text(
                 "Products",
@@ -84,8 +86,8 @@ fun ProfileScreen() {
                     .padding(vertical = 4.dp, horizontal = 16.dp)
                     .padding(top = 12.dp)
             )
-            ProfileCard("Liked") { }
-            ProfileCard("My Products") { }
+            ProfileCard("Liked") { onSubMenu(Screen.LikedProducts) }
+            ProfileCard("My Products") { onSubMenu(Screen.MyProducts) }
 
             Text(
                 "History",
@@ -95,8 +97,8 @@ fun ProfileScreen() {
                     .padding(vertical = 4.dp, horizontal = 16.dp)
                     .padding(top = 12.dp)
             )
-            ProfileCard("Buy History") { }
-            ProfileCard("Search History") { }
+            ProfileCard("Buy History") { onSubMenu(Screen.BuyHistory) }
+            ProfileCard("Search History") { onSubMenu(Screen.SearchHistory) }
         }
     }
 }

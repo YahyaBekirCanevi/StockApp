@@ -10,6 +10,7 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.io.IOException
 import java.net.SocketTimeoutException
+import java.util.concurrent.TimeUnit.*
 
 object ApiClient {
 
@@ -27,6 +28,9 @@ object ApiClient {
             loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY)
 
             val client = OkHttpClient.Builder()
+                .connectTimeout(100, SECONDS) // Connection timeout
+                .readTimeout(100, SECONDS)    // Read timeout
+                .writeTimeout(100, SECONDS)   // Write timeout
                 .addInterceptor(loggingInterceptor)
                 .addInterceptor { chain ->
                     val request: Request = chain.request().newBuilder().build()
