@@ -19,60 +19,77 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.toRoute
 import com.canevi.stockapp.model.Product
 import com.canevi.stockapp.ui.screen.main.AppScreen
 import com.canevi.stockapp.ui.screen.productdetail.BuyProductScreen
 import com.canevi.stockapp.ui.screen.productdetail.NewProductScreen
-import kotlinx.serialization.Serializable
+import com.canevi.stockapp.ui.screen.productdetail.UpdateProductScreen
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.serializer
 
-@Serializable
-object AppScreen
-
-@Serializable
-object NewProduct
+fun String.encodeForRoute(): String = this.replace("{", "%7B").replace("}", "%7D").replace("\"", "%22")
 
 @Composable
 fun App() {
     val navController = rememberNavController()
-    NavHost(navController, startDestination = AppScreen,
+    NavHost(
+        navController = navController, startDestination = "app_screen",
         enterTransition = { EnterTransition.None },
         exitTransition = { ExitTransition.None }) {
-        composable<AppScreen> {
+        composable("app_screen") {
             AppScreen(
-                onNavigateToProductBuy = { product ->
-                    navigateToTap(navController, product)
+                onNavigateToProductBuy = {
+                    val productJson = Json.encodeToString(serializer<Product>(), it)
+                    navigateTo(navController, "buy_product?product=${productJson.encodeForRoute()}")
+                },
+                onNavigateToProductUpdate = {
+                    val productJson = Json.encodeToString(serializer<Product>(), it)
+                    navigateTo(navController, "update_product?product=${productJson.encodeForRoute()}")
                 },
                 onNavigateToNewProduct = {
-                    navigateToTap(navController, NewProduct)
+                    navigateTo(navController, "new_product")
                 },
             )
         }
-        composable<Product>(
-            enterTransition = { enterTransition(Start) },
-            exitTransition = { exitTransition(End) }
-        ) { backStackEntry ->
-            val product = backStackEntry.toRoute<Product>()
-            BuyProductScreen(
-                product = product,
-                onNavigateToProductList = {
-                    navController.popBackStack()
-                }
-            )
-        }
-        composable<NewProduct>(
+        composable(
+            "new_product",
             enterTransition = { enterTransition(Up) },
             exitTransition = { exitTransition(Down) }
         ) {
             NewProductScreen(
-                onBack = {
-                    navController.popBackStack()
-                }
+                onBack = { navController.popBackStack() }
+            )
+        }
+        composable(
+            "buy_product?product={product}",
+            enterTransition = { enterTransition(Start) },
+            exitTransition = { exitTransition(End) }
+        ) { backStackEntry ->
+            val product = backStackEntry.decodeRoute<Product>("product")
+            BuyProductScreen(
+                product = product, onBack = { navController.popBackStack() }
+            )
+        }
+        composable(
+            "update_product?product={product}",
+            enterTransition = { enterTransition(Up) },
+            exitTransition = { exitTransition(Down) }
+        ) { backStackEntry ->
+            val product = backStackEntry.decodeRoute<Product>("product")
+            UpdateProductScreen(
+                product = product, onBack = { navController.popBackStack() }
             )
         }
     }
 }
-fun <T : Any> navigateToTap(navController: NavHostController, route: T) {
+
+inline fun <reified T : Any> NavBackStackEntry.decodeRoute(route: String): T {
+    val routeJson = arguments?.getString(route)
+        ?: throw IllegalArgumentException("Missing argument")
+    return Json.decodeFromString(routeJson)
+}
+
+fun navigateTo(navController: NavHostController, route: String) {
     navController.navigate(route) {
         navController.graph.startDestinationRoute?.let { homeScreen ->
             popUpTo(homeScreen) {

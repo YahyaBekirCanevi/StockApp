@@ -22,6 +22,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -53,7 +54,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 @Composable
-fun MyProductsScreen() {
+fun MyProductsScreen(
+    onNavigateToProductUpdate: (Product) -> Unit
+) {
     val coroutineScope = rememberCoroutineScope()
     val productRepository = ProductRepository(LocalContext.current)
     val products = remember { mutableStateListOf<Product>() }
@@ -68,12 +71,15 @@ fun MyProductsScreen() {
     }
 
     Column {
-        products.filterNot { it.id == null }.map { ProductItem(it) }
+        products.filterNot { it.id == null }.map { ProductItem(it, onNavigateToProductUpdate) }
     }
 }
 
 @Composable
-fun ProductItem(product: Product) {
+fun ProductItem(
+    product: Product,
+    onNavigateToProductUpdate: (Product) -> Unit
+) {
     val productDetailRepository = ProductDetailRepository(LocalContext.current)
     val (productDetail, setProductDetail) = remember { mutableStateOf<ProductDTO?>(null) }
 
@@ -102,6 +108,9 @@ fun ProductItem(product: Product) {
                 .background(
                     MaterialTheme.colorScheme.onSurface.copy(alpha = .2f), RoundedCornerShape(16.dp)
                 )
+                .clickable(onClick = {
+                    onNavigateToProductUpdate(product)
+                })
         ) {
             if (productDetail.images.isNotEmpty())
                 Box(
@@ -141,52 +150,11 @@ fun ProductItem(product: Product) {
                         }
                     }
                 }
-            Column(Modifier.padding(start = 16.dp), verticalArrangement = Arrangement.Center) {
-                Text(
-                    productDetail.name, color = MaterialTheme.colorScheme.onSurface,
-                    style = MaterialTheme.typography.titleMedium
-                )
-                if (productDetail.categories.isNotEmpty())
-                    LazyVerticalGrid(
-                        columns = GridCells.Adaptive(minSize = 100.dp),
-                        modifier = Modifier
-                            .padding(8.dp)
-                            .wrapContentHeight()
-                            .fillMaxWidth()
-                    ) {
-                        items(productDetail.categories.size % 3) { index ->
-                            Row(
-                                modifier = Modifier
-                                    .padding(end = 12.dp)
-                                    .border(
-                                        1.dp,
-                                        MaterialTheme.colorScheme.tertiary,
-                                        RoundedCornerShape(12.dp)
-                                    )
-                                    .padding(start = 16.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.Absolute.SpaceAround
-                            ) {
-                                Text(
-                                    productDetail.categories[index],
-                                    fontSize = 16.sp,
-                                    minLines = 1,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.widthIn(min = 16.dp, max = 256.dp)
-                                )
-                                IconButton(onClick = {
-                                    //productDetail.categories.removeAt(index)
-                                }) {
-                                    Icon(
-                                        Icons.Default.Close,
-                                        "Remove",
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                }
-                            }
-                        }
-                    }
-            }
+            Text(
+                productDetail.name, color = MaterialTheme.colorScheme.onSurface,
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(start = 16.dp)
+            )
+            Icon(Icons.Filled.Edit, "", modifier = Modifier.padding(horizontal = 16.dp))
         }
 }

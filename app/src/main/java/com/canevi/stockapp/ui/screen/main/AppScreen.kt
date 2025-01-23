@@ -25,6 +25,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun AppScreen(
     onNavigateToProductBuy: (Product) -> Unit,
+    onNavigateToProductUpdate: (Product) -> Unit,
     onNavigateToNewProduct: () -> Unit,
 ) {
     val coroutineScope = rememberCoroutineScope()
@@ -51,7 +52,9 @@ fun AppScreen(
                     onNavigateToProductBuy = onNavigateToProductBuy
                 )
             } else {
-                ProfileNavigation()
+                ProfileNavigation(
+                    onNavigateToProductUpdate = onNavigateToProductUpdate
+                )
             }
         }
         BottomAppBar(

@@ -70,7 +70,8 @@ import java.io.ByteArrayOutputStream
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NewProductScreen(
+fun UpdateProductScreen(
+    product: Product,
     onBack: () -> Unit,
 ) {
     val currentContext = LocalContext.current
@@ -85,7 +86,7 @@ fun NewProductScreen(
     var description by remember { mutableStateOf("") }
     var price by remember { mutableStateOf("") }
     var categories = remember { mutableStateListOf<String>() }
-    val images = remember { mutableStateListOf<ByteArray>() }
+    var images = remember { mutableStateListOf<ImageDTO>() }
     val categorySearch = remember { mutableStateListOf<Category>() }
 
 
@@ -94,6 +95,22 @@ fun NewProductScreen(
     val openCategoryDialog = remember { mutableStateOf(false) }
     val imageDialog = remember { mutableStateOf<BitmapPainter?>(null) }
     var exitWithoutSaveDialog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        name = product.name
+        description = product.description
+        price = product.price.toString()
+        coroutineScope.launch {
+            val categoryList = withContext(Dispatchers.IO) {
+                productRepository.getCategoriesOfProduct(product.id!!)
+            }
+            categories = categoryList.values.toMutableStateList()
+            val imageList = withContext(Dispatchers.IO) {
+                productRepository.getImagesForProduct(product.id!!)
+            }
+            images = imageList.toMutableStateList()
+        }
+    }
 
 
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) {
@@ -106,38 +123,25 @@ fun NewProductScreen(
                 val stream = ByteArrayOutputStream()
                 bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream)
                 val byteArray = stream.toByteArray()
-                images.add(byteArray)
+                val imageDTO = ImageDTO.ofProduct(product.id!!, byteArray)
+                val added = productRepository.addImagesToProduct(product.id, listOf(imageDTO))
+                if (added != null) images.add(imageDTO)
             }
         }
     }
 
     fun saveProduct() {
-        val product = Product(
+        val updateProduct = Product(
+            id = product.id,
             name = name,
             description = description,
             price = price.toDouble()
         )
 
         coroutineScope.launch {
-            val newProduct = productRepository.addProduct(product)
-            if (newProduct == null) {
-                snackBarHostState.showSnackbar("Couldn't add new product!")
-                return@launch
-            }
-            val addImagesResponse = productRepository.addImagesToProduct(
-                newProduct.id!!,
-                images.map { ImageDTO.ofProduct(newProduct.id, it) }
-            )
-            if (addImagesResponse == null) {
-                snackBarHostState.showSnackbar("Couldn't add images to product! Try again in your profile.")
-                return@launch
-            }
-            val addCategoryResponse = productRepository.addCategoriesToProduct(
-                newProduct.id,
-                categories
-            )
-            if (addCategoryResponse == null) {
-                snackBarHostState.showSnackbar("Couldn't add categories to product! Try again in your profile.")
+            val updatedProduct = productRepository.updateProduct(product.id!!, updateProduct)
+            if (updatedProduct == null) {
+                snackBarHostState.showSnackbar("Couldn't update product!")
                 return@launch
             }
         }
@@ -153,6 +157,10 @@ fun NewProductScreen(
         isEmpty()
     }
 
+    LaunchedEffect(key1 = name, key2 = price, key3 = description) {
+        saveProduct()
+    }
+
     Scaffold(
         snackbarHost = { SnackbarHost(snackBarHostState) },
         topBar = {
@@ -166,17 +174,22 @@ fun NewProductScreen(
             )
         },
         content = { innerPadding ->
-            Column(modifier = Modifier
-                .fillMaxWidth()
-                .padding(innerPadding)) {
-                Column(modifier = Modifier
-                    .weight(1f)
-                    .padding(16.dp)) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(innerPadding)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(16.dp)
+                ) {
 
                     Row(
                         Modifier
                             .horizontalScroll(imagesScrollState)
-                            .padding(bottom = 16.dp)) {
+                            .padding(bottom = 16.dp)
+                    ) {
                         Box(
                             Modifier
                                 .size(120.dp)
@@ -191,7 +204,7 @@ fun NewProductScreen(
                                 .clickable(onClick = {
                                     launcher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
                                 }),
-                                contentAlignment = Alignment.Center
+                            contentAlignment = Alignment.Center
                         ) {
                             Text(
                                 "Add\nPhoto",
@@ -202,51 +215,69 @@ fun NewProductScreen(
                                     .wrapContentHeight()
                             )
                         }
-                        images.map { image ->
-                            Box(
-                                Modifier
-                                    .size(120.dp)
-                                    .padding(end = 8.dp)
-                                    .clip(RoundedCornerShape(16.dp))
-                                    .background(MaterialTheme.colorScheme.tertiary)
-                                    .border(
-                                        1.dp,
-                                        MaterialTheme.colorScheme.primary,
-                                        RoundedCornerShape(16.dp)
-                                    ),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                BitmapFactory.decodeByteArray(image, 0, image.size)?.let { bitmap ->
-                                    val painter = BitmapPainter(bitmap.asImageBitmap())
-                                    Box(Modifier.clickable(onClick = {
-                                        imageDialog.value = painter
-                                    })) {
-                                        Image(
-                                            painter = painter,
-                                            contentDescription = "Loaded image",
-                                            modifier = Modifier.fillMaxSize(),
-                                            contentScale = ContentScale.Crop
-                                        )
-                                        Box(
-                                            Modifier
-                                                .padding(8.dp)
-                                                .size(20.dp)
-                                                .align(Alignment.TopEnd)
-                                                .clickable(onClick = {
-                                                    images.remove(image)
-                                                })
-                                                .background(Color.Gray, RoundedCornerShape(50.dp))
-                                                .padding(2.dp)
-                                        ) {
-                                            Icon(Icons.Filled.Clear, "", tint = Color.White)
+                        if (images.isNotEmpty())
+                            images.map { image ->
+                                Box(
+                                    Modifier
+                                        .size(120.dp)
+                                        .padding(end = 8.dp)
+                                        .clip(RoundedCornerShape(16.dp))
+                                        .background(MaterialTheme.colorScheme.tertiary)
+                                        .border(
+                                            1.dp,
+                                            MaterialTheme.colorScheme.primary,
+                                            RoundedCornerShape(16.dp)
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    val byteArray = ImageDTO.decode(image.imageData)
+                                    BitmapFactory.decodeByteArray(byteArray, 0, byteArray.size)
+                                        ?.let { bitmap ->
+                                            val painter = BitmapPainter(bitmap.asImageBitmap())
+                                            Box(Modifier.clickable(onClick = {
+                                                imageDialog.value = painter
+                                            })) {
+                                                Image(
+                                                    painter = painter,
+                                                    contentDescription = "Loaded image",
+                                                    modifier = Modifier.fillMaxSize(),
+                                                    contentScale = ContentScale.Crop
+                                                )
+                                                Box(
+                                                    Modifier
+                                                        .padding(8.dp)
+                                                        .size(20.dp)
+                                                        .align(Alignment.TopEnd)
+                                                        .clickable(onClick = {
+                                                            coroutineScope.launch {
+                                                                val deleted =
+                                                                    productRepository.deleteImageFromProduct(
+                                                                        product.id!!,
+                                                                        image.id!!
+                                                                    )
+                                                                if (deleted != null)
+                                                                    images.remove(image)
+                                                            }
+                                                        })
+                                                        .background(
+                                                            Color.Gray,
+                                                            RoundedCornerShape(50.dp)
+                                                        )
+                                                        .padding(2.dp)
+                                                ) {
+                                                    Icon(Icons.Filled.Clear, "", tint = Color.White)
+                                                }
+                                            }
                                         }
-                                    }
                                 }
                             }
-                        }
                     }
                     CustomTextFieldWithLabel(label = "Product Name", value = name) { name = it }
-                    CustomTextFieldWithLabel(label = "Price", value = price, keyboardType = KeyboardType.Decimal) {
+                    CustomTextFieldWithLabel(
+                        label = "Price",
+                        value = price,
+                        keyboardType = KeyboardType.Decimal
+                    ) {
                         price = it.replace(',', '.')
                     }
                     CustomTextFieldWithLabel(label = "Description", value = description) {
@@ -264,70 +295,53 @@ fun NewProductScreen(
                         IconButton(onClick = {
                             openCategoryDialog.value = true
                         }, modifier = Modifier.padding(horizontal = 8.dp)) {
-                            Icon(Icons.Filled.Add, "Add Category", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                            Icon(
+                                Icons.Filled.Add,
+                                "Add Category",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
                         }
                     }
-                    LazyVerticalGrid(
-                        columns = GridCells.Adaptive(minSize = 100.dp),
-                        modifier = Modifier
-                            .padding(8.dp)
-                            .wrapContentHeight()
-                            .fillMaxWidth()
-                    ) {
-                        items(categories.size) { index ->
-                            Row(
-                                modifier = Modifier
-                                    .padding(end = 12.dp)
-                                    .border(
-                                        1.dp,
-                                        MaterialTheme.colorScheme.tertiary,
-                                        RoundedCornerShape(12.dp)
+                    if (categories.isNotEmpty())
+                        LazyVerticalGrid(
+                            columns = GridCells.Adaptive(minSize = 100.dp),
+                            modifier = Modifier
+                                .padding(8.dp)
+                                .wrapContentHeight()
+                                .fillMaxWidth()
+                        ) {
+                            items(categories.size) { index ->
+                                Row(
+                                    modifier = Modifier
+                                        .padding(end = 12.dp)
+                                        .border(
+                                            1.dp,
+                                            MaterialTheme.colorScheme.tertiary,
+                                            RoundedCornerShape(12.dp)
+                                        )
+                                        .padding(start = 16.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.Absolute.SpaceAround
+                                ) {
+                                    Text(
+                                        categories[index],
+                                        fontSize = 16.sp,
+                                        minLines = 1,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier.widthIn(min = 16.dp, max = 256.dp)
                                     )
-                                    .padding(start = 16.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.Absolute.SpaceAround
-                            ) {
-                                Text(
-                                    categories[index], fontSize = 16.sp, minLines = 1, maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.widthIn(min = 16.dp, max = 256.dp)
-                                )
-                                IconButton(onClick = { categories.removeAt(index) }) {
-                                    Icon(
-                                        Icons.Default.Close,
-                                        "Remove",
-                                        modifier = Modifier.size(16.dp)
-                                    )
+                                    IconButton(onClick = { categories.removeAt(index) }) {
+                                        Icon(
+                                            Icons.Default.Close,
+                                            "Remove",
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
                                 }
                             }
                         }
-                    }
-                }
-
-                Button(
-                    onClick = { saveProduct() },
-                    enabled = name.isNotEmpty() && price.isNotEmpty() && description.isNotEmpty()
-                            && categories.isNotEmpty() && images.isNotEmpty(),
-                    colors = ButtonColors(
-                        containerColor = Color.Transparent,
-                        disabledContainerColor = Color.Transparent,
-                        contentColor = Color.Black,
-                        disabledContentColor = Color.Black
-                    ),
-                    modifier = Modifier
-                        .padding(top = 16.dp, start = 16.dp, end = 16.dp, bottom = 32.dp)
-                        .fillMaxWidth()
-                        .background(
-                            MaterialTheme.colorScheme.primary,
-                            shape = RoundedCornerShape(16.dp)
-                        )
-                        .clip(RoundedCornerShape(16.dp))
-                ) {
-                    Text(
-                        "Save Product",
-                        fontSize = 16.sp,
-                        color = MaterialTheme.colorScheme.inverseOnSurface
-                    )
                 }
             }
 
@@ -354,12 +368,16 @@ fun NewProductScreen(
                                 onValueChange = {
                                     newCategory = it
                                     coroutineScope.launch {
-                                        val categoriesSearched = categoryRepository.searchCategories(name=newCategory)
+                                        val categoriesSearched =
+                                            categoryRepository.searchCategories(name = newCategory)
                                         categorySearch.clear()
                                         categorySearch.addAll(categoriesSearched)
                                     }
                                 },
-                                textStyle = TextStyle(fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurface),
+                                textStyle = TextStyle(
+                                    fontSize = 18.sp,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                ),
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(vertical = 8.dp),
@@ -367,7 +385,11 @@ fun NewProductScreen(
                                 cursorBrush = SolidColor(MaterialTheme.colorScheme.onSurface),
                                 decorationBox = { innerTextField ->
                                     if (newCategory.isEmpty()) {
-                                        Text(text = "Enter Category", color = Color.Gray, fontSize = 18.sp)
+                                        Text(
+                                            text = "Enter Category",
+                                            color = Color.Gray,
+                                            fontSize = 18.sp
+                                        )
                                     }
                                     innerTextField()
                                 },
@@ -463,20 +485,29 @@ fun NewProductScreen(
                         exitWithoutSaveDialog = false
                     }
                 ) {
-                    Column(Modifier.background(MaterialTheme.colorScheme.surface).padding(8.dp)) {
+                    Column(
+                        Modifier
+                            .background(MaterialTheme.colorScheme.surface)
+                            .padding(8.dp)
+                    ) {
                         Text(
                             "Exiting Without Saving",
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.W700,
                             textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(16.dp).fillMaxWidth()
+                            modifier = Modifier
+                                .padding(16.dp)
+                                .fillMaxWidth()
                         )
                         Text(
                             "Are you sure to exit without saving?",
                             style = MaterialTheme.typography.bodyMedium,
                             color = Color.Gray,
                             textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(bottom = 16.dp).padding(horizontal = 32.dp).fillMaxWidth()
+                            modifier = Modifier
+                                .padding(bottom = 16.dp)
+                                .padding(horizontal = 32.dp)
+                                .fillMaxWidth()
                         )
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -484,7 +515,9 @@ fun NewProductScreen(
                         ) {
                             Button(
                                 onClick = { onBack() },
-                                modifier = Modifier.padding(start = 8.dp).weight(1f),
+                                modifier = Modifier
+                                    .padding(start = 8.dp)
+                                    .weight(1f),
                                 colors = ButtonColors(
                                     containerColor = Color.Red.copy(alpha = .6f),
                                     contentColor = MaterialTheme.colorScheme.onSurface,
@@ -496,7 +529,9 @@ fun NewProductScreen(
                             }
                             Button(
                                 onClick = { exitWithoutSaveDialog = false },
-                                modifier = Modifier.padding(horizontal = 8.dp).weight(1f),
+                                modifier = Modifier
+                                    .padding(horizontal = 8.dp)
+                                    .weight(1f),
                                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
                                 colors = ButtonColors(
                                     containerColor = MaterialTheme.colorScheme.surface,

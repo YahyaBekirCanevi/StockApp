@@ -10,12 +10,15 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.graphics.Color
+import com.canevi.stockapp.model.Product
 import com.canevi.stockapp.ui.screen.profile.sub.AccountScreen
 import com.canevi.stockapp.ui.screen.profile.sub.MyProductsScreen
 import kotlinx.coroutines.launch
 
 @Composable
-fun ProfileNavigation() {
+fun ProfileNavigation(
+    onNavigateToProductUpdate: (Product) -> Unit
+) {
     val pageValue = rememberPagerState(initialPage = 0) { 2 }
     val coroutineScope = rememberCoroutineScope()
     var (page, setPage) = remember { mutableStateOf(Screen.Account) }
@@ -45,7 +48,9 @@ fun ProfileNavigation() {
                 Screen.Account -> AccountScreen()
                 Screen.NotificationSettings -> Text("NotificationSettings", color = Color.White)
                 Screen.LikedProducts -> Text("LikedProducts", color = Color.White)
-                Screen.MyProducts -> MyProductsScreen()
+                Screen.MyProducts -> MyProductsScreen(
+                    onNavigateToProductUpdate = onNavigateToProductUpdate
+                )
                 Screen.BuyHistory -> Text("BuyHistory", color = Color.White)
                 Screen.SearchHistory -> Text("SearchHistory", color = Color.White)
             }

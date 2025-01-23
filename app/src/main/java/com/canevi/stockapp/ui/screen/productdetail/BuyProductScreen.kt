@@ -46,6 +46,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -62,16 +63,18 @@ import com.canevi.stockapp.model.Product
 import com.canevi.stockapp.model.dto.ImageDTO
 import com.canevi.stockapp.repository.ProductRepository
 import com.canevi.stockapp.ui.theme.StockAppTheme
+import kotlinx.coroutines.launch
 import java.util.Base64
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BuyProductScreen(
     product: Product,
-    onNavigateToProductList: () -> Unit,
+    onBack: () -> Unit,
 ) {
     val productRepository = ProductRepository(LocalContext.current)
     val snackBarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
 
     val scrollState = rememberScrollState()
     val nameScrollState = rememberScrollState()
@@ -83,11 +86,14 @@ fun BuyProductScreen(
     var imagePagerState = remember { PagerState(pageCount = { 0 }) }
 
     LaunchedEffect(Unit) {
-        categories = productRepository.getCategoriesOfProduct(product.id.toString()).toMutableMap()
-        productRepository.getImagesForProduct(product.id.toString()).forEach {
-            images.put(it.id.toString(), Base64.getDecoder().decode(ImageDTO.decode(it.imageData)))
+        if (product.id == null) return@LaunchedEffect
+        coroutineScope.launch {
+            categories = productRepository.getCategoriesOfProduct(product.id).toMutableMap()
+            productRepository.getImagesForProduct(product.id).forEach {
+                images.put(it.id.toString(), Base64.getDecoder().decode(ImageDTO.decode(it.imageData)))
+            }
+            imagePagerState = PagerState(pageCount = { images.size })
         }
-        imagePagerState = PagerState(pageCount = { images.size })
     }
 
     Scaffold(
@@ -134,7 +140,7 @@ fun BuyProductScreen(
                         IconButton(
                             modifier = Modifier.padding(4.dp),
                             onClick = {
-                                onNavigateToProductList()
+                                onBack()
                             }
                         ) {
                             Icon(
@@ -267,6 +273,6 @@ fun BuyProductScreenLightPreview() {
         price = 123.459
     )
     StockAppTheme(darkTheme = false) {
-        BuyProductScreen(product = product, onNavigateToProductList = {})
+        BuyProductScreen(product = product, onBack = {})
     }
 }

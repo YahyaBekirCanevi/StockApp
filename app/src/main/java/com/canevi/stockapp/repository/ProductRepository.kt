@@ -39,6 +39,15 @@ class ProductRepository(context: Context) {
         null
     }
 
+    suspend fun updateProduct(productId: String, product: Product): Product? = try {
+        withContext(Dispatchers.IO) {
+            api?.updateProduct(productId, product)
+        }
+    } catch (e: Exception) {
+        e.printStackTrace()
+        null
+    }
+
     suspend fun searchProducts(name: String): List<Product> = try {
         withContext(Dispatchers.IO) {
             api?.searchProducts(name) ?: emptyList()
@@ -66,21 +75,39 @@ class ProductRepository(context: Context) {
         emptyList()
     }
 
-    suspend fun addImagesToProduct(productId: String, imageFiles: List<ImageDTO>): String = try {
+    suspend fun addImagesToProduct(productId: String, imageFiles: List<ImageDTO>): String? = try {
         withContext(Dispatchers.IO) {
-            api?.addImagesToProduct(productId, imageFiles) ?: ""
+            api?.addImagesToProduct(productId, imageFiles)
         }
     } catch (e: Exception) {
         e.printStackTrace()
-        ""
+        null
     }
 
-    suspend fun addCategoriesToProduct(productId: String, categories: List<String>): String = try {
+    suspend fun addCategoriesToProduct(productId: String, categories: List<String>): String? = try {
         withContext(Dispatchers.IO) {
             api?.addCategoriesToProduct(productId, categories) ?: ""
         }
     } catch (e: Exception) {
         e.printStackTrace()
-        ""
+        null
+    }
+
+    suspend fun deleteImageFromProduct(productId: String, imageId: String): String? = try {
+        withContext(Dispatchers.IO) {
+            api?.deleteImageFromProduct(productId, imageId)
+        }
+    } catch (e: Exception) {
+        e.printStackTrace()
+        null
+    }
+
+    suspend fun removeCategoryFromProduct(productId: String, categoryId: String): String? = try {
+        withContext(Dispatchers.IO) {
+            api?.removeCategoryFromProduct(productId, categoryId)
+        }
+    } catch (e: Exception) {
+        e.printStackTrace()
+        null
     }
 }
