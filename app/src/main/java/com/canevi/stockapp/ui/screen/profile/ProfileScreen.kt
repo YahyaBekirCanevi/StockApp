@@ -2,11 +2,7 @@ package com.canevi.stockapp.ui.screen.profile
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.consumeWindowInsets
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -20,8 +16,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import com.canevi.stockapp.ui.component.BottomAppBar
-import com.canevi.stockapp.ui.component.SearchBar
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -37,7 +31,9 @@ fun ProfileScreen(
         snackbarHost = { SnackbarHost(snackBarHostState) },
         bottomBar = {
             BottomAppBar(
-                showNewProductScreen = { onNavigateToNewProduct() }
+                showNewProductScreen = { onNavigateToNewProduct() },
+                onHomeScreen = {},
+                onProfileScreen = {}
             )
         },
         topBar = {
